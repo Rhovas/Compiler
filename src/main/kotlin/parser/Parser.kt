@@ -79,16 +79,8 @@ private class Parser(private val tokens: TokenStream) {
             match("true", "false") -> LiteralExpr(tokens[0]!!.literal.toBoolean())
             match(TokenType.INTEGER) -> LiteralExpr(tokens[0]!!.literal.toInt())
             match(TokenType.DECIMAL) -> LiteralExpr(tokens[0]!!.literal.toDouble())
-            match(TokenType.CHARACTER) -> LiteralExpr(tokens[0]!!.literal.removeSurrounding("\'"))
-            match(TokenType.STRING) -> LiteralExpr(tokens[0]!!.literal.removeSurrounding("\"")
-                .replace("\\t", "\t")
-                .replace("\\b", "\b")
-                .replace("\\n", "\n")
-                .replace("\\r", "\r")
-                .replace("\\\'", "\'")
-                .replace("\\\"", "\"")
-                .replace("\\\\", "\\")
-                .replace("\\\$", "\$"))
+            match(TokenType.CHARACTER) -> LiteralExpr(escape(tokens[0]!!.literal)[1])
+            match(TokenType.STRING) -> LiteralExpr(escape(tokens[0]!!.literal).removeSurrounding("\""))
             match(TokenType.IDENTIFIER) -> {
                 val name = tokens[0]!!.literal
                 when {
@@ -129,6 +121,18 @@ private class Parser(private val tokens: TokenStream) {
             is TokenType -> obj == tokens[offset]?.type
             else -> obj.toString() == tokens[offset]?.literal
         }
+    }
+
+    private fun escape(string: String): String {
+        return string
+            .replace("\\t", "\t")
+            .replace("\\b", "\b")
+            .replace("\\n", "\n")
+            .replace("\\r", "\r")
+            .replace("\\\'", "\'")
+            .replace("\\\"", "\"")
+            .replace("\\\\", "\\")
+            .replace("\\\$", "\$")
     }
 
 }

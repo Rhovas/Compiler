@@ -50,7 +50,7 @@ private class Lexer(private val chars: CharStream) {
         if (chars[0] == '\\') {
             assert(match { it in listOf('t', 'b', 'n', 'r', '\'', '\"', '\\', '\$') })
         }
-        assert(match { it != '\'' })
+        assert(match { it == '\'' })
         return TokenType.CHARACTER
     }
 
