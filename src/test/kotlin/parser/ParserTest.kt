@@ -137,8 +137,7 @@ class ParserTest {
 
     @Test
     fun testExpressions() {
-        val expr = parse(lex("x <= (1 + 2) / 3 && y == \"ca\t\" || z(4.5, '@') && !obj.field.method()[6]"))
-        Assertions.assertEquals(
+        test("x <= (1 + 2) / 3 && y == \"ca\t\" || z(4.5, '@') && !obj.field.method()[6]",
             BinaryExpr("||",
                 BinaryExpr("&&",
                     BinaryExpr("<=",
@@ -173,12 +172,12 @@ class ParserTest {
                         )
                     )
                 )
-            ),
-            expr)
+            )
+        )
     }
 
     private fun test(input: String, expected: Expr) {
-        Assertions.assertEquals(expected, parse(lex(input)))
+        Assertions.assertEquals(expected, Parser(Lexer(input).lex()).parseExpr())
     }
 
     private fun expr(n: Int? = null): Expr {

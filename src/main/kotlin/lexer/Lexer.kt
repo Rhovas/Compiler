@@ -1,12 +1,12 @@
 package dev.rhovas.compiler.lexer
 
-fun lex(chars: CharSequence): Sequence<Token> {
-    return Lexer(CharStream(chars)).tokens
-}
+class Lexer(chars: CharSequence) {
 
-private class Lexer(private val chars: CharStream) {
+    private val chars = CharStream(chars)
 
-    val tokens = generateSequence { chars[1]?.let { lexToken() } }
+    fun lex(): Sequence<Token> {
+        return generateSequence { chars[1]?.let { lexToken() } }
+    }
 
     private fun lexToken(): Token {
         assert(chars[1] != null)

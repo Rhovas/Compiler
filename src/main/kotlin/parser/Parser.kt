@@ -3,11 +3,9 @@ package dev.rhovas.compiler.parser
 import dev.rhovas.compiler.lexer.*
 import dev.rhovas.compiler.structure.*
 
-fun parse(tokens: Sequence<Token>): Expr {
-    return Parser(TokenStream(tokens.filter { it.type != TokenType.WHITESPACE }.toList())).parseExpr()
-}
+class Parser(tokens: Sequence<Token>) {
 
-private class Parser(private val tokens: TokenStream) {
+    private val tokens = TokenStream(tokens.filter { it.type != TokenType.WHITESPACE }.toList())
 
     fun parseStmt(): Stmt {
         return when(tokens[1]?.literal) {

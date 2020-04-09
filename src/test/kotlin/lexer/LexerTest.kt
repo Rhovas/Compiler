@@ -148,7 +148,7 @@ class LexerTest {
     }
 
     private fun test(input: String, expected: List<Token>) {
-        Assertions.assertEquals(expected, lex(input).toList())
+        Assertions.assertEquals(expected, Lexer(input).lex().toList())
     }
 
 }
