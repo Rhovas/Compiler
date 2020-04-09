@@ -9,6 +9,143 @@ fun parse(tokens: Sequence<Token>): Expr {
 
 private class Parser(private val tokens: TokenStream) {
 
+    fun parseStmt(): Stmt {
+        return when(tokens[1]?.literal) {
+            "{" -> parseBlockStmt()
+            "var", "val" -> parseDeclarationStmt()
+            "if" -> parseIfStmt()
+            "match" -> parseMatchStmt()
+            "for" -> parseForStmt()
+            "while" -> parseWhileStmt()
+            "try" -> parseTryStmt()
+            "with" -> parseWithStmt()
+            "break", "continue", "return", "throw" -> parseJumpStmt()
+            "assert", "require", "ensure" -> parseAssertStmt()
+            else -> {
+                if (isMatch(1, TokenType.IDENTIFIER) && isMatch(2, ":")) {
+                    assert(match(TokenType.IDENTIFIER))
+                    val label = tokens[0]!!.literal
+                    assert(match(":"))
+                    val stmt = parseStmt()
+                    LabelStmt(label, stmt)
+                } else {
+                    val expr = parseExpr()
+                    val stmt = if (match("=")) {
+                        AssignmentStmt(expr, parseExpr())
+                    } else {
+                        ExpressionStmt(expr)
+                    }
+                    assert(match(";"))
+                    stmt
+                }
+            }
+        }
+    }
+
+    private fun parseBlockStmt(): Stmt {
+        return BlockStmt(parseSeq(null, "}", this::parseStmt))
+    }
+
+    private fun parseDeclarationStmt(): Stmt {
+        assert(match("var", "val"))
+        val mut = tokens[0]!!.literal == "var"
+        assert(match(TokenType.IDENTIFIER))
+        val name = tokens[0]!!.literal
+        val expr = if (match("=")) parseExpr() else null
+        assert(match(";"))
+        return DeclarationStmt(mut, name, expr)
+    }
+
+    private fun parseIfStmt(): Stmt {
+        assert(match("if"))
+        assert(match("("))
+        val expr = parseExpr()
+        assert(match(")"))
+        val then = parseStmt()
+        val else_ = if (match("else")) parseStmt() else null
+        return IfStmt(expr, then, else_)
+    }
+
+    private fun parseMatchStmt(): Stmt {
+        assert(match("match"))
+        assert(match("("))
+        val exprs = parseSeq(",", ")", this::parseExpr)
+        assert(match("{"))
+        val cases = parseSeq(null, "}") {
+            Pair(parseSeq(",", ":", this::parseExpr), parseStmt())
+        }
+        assert(match("}"))
+        return MatchStmt(exprs, cases)
+    }
+
+    private fun parseForStmt(): Stmt {
+        assert(match("for"))
+        assert(match("("))
+        assert(match(TokenType.IDENTIFIER))
+        val name = tokens[0]!!.literal
+        assert(match("in"))
+        val expr = parseExpr()
+        assert(match(")"))
+        val stmt = parseStmt()
+        return ForStmt(name, expr, stmt)
+    }
+
+    private fun parseWhileStmt(): Stmt {
+        assert(match("while"))
+        assert(match("("))
+        val expr = parseExpr()
+        assert(match(")"))
+        val stmt = parseStmt()
+        return WhileStmt(expr, stmt)
+    }
+
+    private fun parseTryStmt(): Stmt {
+        assert(match("try"))
+        val stmt = parseStmt()
+        val catch = if (match("catch")) parseStmt() else null
+        val finally = if (match("finally")) parseStmt() else null
+        return TryStmt(stmt, catch, finally)
+    }
+
+    private fun parseWithStmt(): Stmt {
+        assert(match("with"))
+        assert(match("("))
+        assert(match("var", "val"))
+        val mut = tokens[0]!!.literal == "var"
+        assert(match(TokenType.IDENTIFIER))
+        val name = tokens[0]!!.literal
+        assert(match("="))
+        val expr = parseExpr()
+        assert(match(")"))
+        val stmt = parseStmt()
+        return WithStmt(mut, name, expr, stmt)
+    }
+
+    private fun parseJumpStmt(): Stmt {
+        assert(match("break", "continue", "return", "throw"))
+        val stmt = when (val type = JumpType.valueOf(tokens[0]!!.literal.toUpperCase())) {
+            JumpType.BREAK, JumpType.CONTINUE -> {
+                val label = if (match(TokenType.IDENTIFIER)) tokens[0]!!.literal else null
+                JumpStmt(type, label, null)
+            }
+            JumpType.RETURN -> {
+                val expr = if (tokens[1]?.literal == ";") null else parseExpr()
+                JumpStmt(type, null, expr)
+            }
+            JumpType.THROW -> JumpStmt(type, null, parseExpr())
+        }
+        assert(match(";"))
+        return stmt
+    }
+
+    private fun parseAssertStmt(): Stmt {
+        assert(match("assert", "require", "ensure"))
+        val type = AssertType.valueOf(tokens[0]!!.literal.toUpperCase())
+        val expr = parseExpr()
+        assert(match(";"))
+        return AssertStmt(type, expr)
+    }
+
     fun parseExpr(): Expr {
         return parseLogicalOrExpr()
     }
@@ -97,12 +234,12 @@ private class Parser(private val tokens: TokenStream) {
         }
     }
 
-    private fun <T> parseSeq(sep: String, end: String, parser: () -> T): List<T> {
+    private fun <T> parseSeq(sep: String?, end: String, parser: () -> T): List<T> {
         val list = mutableListOf<T>()
         if (!match(end)) {
             do {
                 list.add(parser())
-            } while (match(sep))
+            } while (if (sep != null) match(sep) else !isMatch(1, end))
             assert(match(end))
         }
         return list
