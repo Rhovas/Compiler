@@ -41,6 +41,7 @@ class Parser(tokens: Sequence<Token>) {
     }
 
     private fun parseBlockStmt(): Stmt {
+        assert(match("{"))
         return BlockStmt(parseSeq(null, "}", this::parseStmt))
     }
 
@@ -70,9 +71,10 @@ class Parser(tokens: Sequence<Token>) {
         val exprs = parseSeq(",", ")", this::parseExpr)
         assert(match("{"))
         val cases = parseSeq(null, "}") {
-            Pair(parseSeq(",", ":", this::parseExpr), parseStmt())
+            Pair(parseSeq(",", ":") {
+                if (match("_")) AccessExpr(this.tokens[0]!!.literal, null) else parseExpr()
+            }, parseStmt())
         }
-        assert(match("}"))
         return MatchStmt(exprs, cases)
     }
 
