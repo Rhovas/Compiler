@@ -12,6 +12,199 @@ import org.junit.jupiter.params.provider.MethodSource
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class ParserTest {
 
+    private fun testBlockStmt() = listOf(
+        Arguments.of("Empty", "{}", BlockStmt(listOf())),
+        Arguments.of("Single Statement", "{stmt;}", BlockStmt(listOf(stmt()))),
+        Arguments.of("Multiple Statements", "{stmt1; stmt2; stmt3;}",
+            BlockStmt(listOf(stmt(1), stmt(2), stmt(3))))
+    )
+
+    @ParameterizedTest(name = "{0}: {1}")
+    @MethodSource
+    fun testBlockStmt(name: String, input: String, expected: Stmt) {
+        test(input, expected)
+    }
+
+    private fun testExpressionStmt() = listOf(
+        Arguments.of("Expression", "expr;", ExpressionStmt(expr())),
+        Arguments.of("Function", "func();",
+            ExpressionStmt(FunctionExpr("func", null, listOf())))
+    )
+
+    @ParameterizedTest(name = "{0}: {1}")
+    @MethodSource
+    fun testExpressionStmt(name: String, input: String, expected: Stmt) {
+        test(input, expected)
+    }
+
+    private fun testDeclarationStmt() = listOf(
+        Arguments.of("Var", "var name;", DeclarationStmt(true, "name", null)),
+        Arguments.of("Val", "val name;", DeclarationStmt(false, "name", null)),
+        Arguments.of("Var Init", "var name = expr;", DeclarationStmt(true, "name", expr())),
+        Arguments.of("Val Int", "val name = expr;", DeclarationStmt(false, "name", expr()))
+    )
+
+    @ParameterizedTest(name = "{0}: {1}")
+    @MethodSource
+    fun testDeclarationStmt(name: String, input: String, expected: Stmt) {
+        test(input, expected)
+    }
+
+    private fun testAssignmentStmt() = listOf(
+        Arguments.of("Variable", "name = expr;",
+            AssignmentStmt(AccessExpr("name", null), expr())),
+        Arguments.of("Property", "expr1.prop = expr2;",
+            AssignmentStmt(AccessExpr("prop", expr(1)), expr(2))),
+        Arguments.of("Index", "expr1[expr2] = expr3;",
+            AssignmentStmt(IndexExpr(expr(1), listOf(expr(2))), expr(3)))
+    )
+
+    @ParameterizedTest(name = "{0}: {1}")
+    @MethodSource
+    fun testAssignmentStmt(name: String, input: String, expected: Stmt) {
+        test(input, expected)
+    }
+
+    private fun testIfStmt() = listOf(
+        Arguments.of("If", "if (expr) stmt;", IfStmt(expr(), stmt(), null)),
+        Arguments.of("Else", "if (expr) stmt1; else stmt2;", IfStmt(expr(), stmt(1), stmt(2))),
+        Arguments.of("Blocks", "if (expr) {} else {stmt1; stmt2; stmt3;}",
+            IfStmt(expr(), BlockStmt(listOf()), BlockStmt(listOf(stmt(1), stmt(2), stmt(3)))))
+    )
+
+    @ParameterizedTest(name = "{0}: {1}")
+    @MethodSource
+    fun testIfStmt(name: String, input: String, expected: Stmt) {
+        test(input, expected)
+    }
+
+    private fun testMatchStmt() = listOf(
+        Arguments.of("Conditional", "match () {expr1: stmt1; expr2: stmt2; expr3: stmt3;}",
+            MatchStmt(listOf(), listOf(
+                Pair(listOf(expr(1)), stmt(1)),
+                Pair(listOf(expr(2)), stmt(2)),
+                Pair(listOf(expr(3)), stmt(3))
+            ))),
+        Arguments.of("Structural", "match (expr1, expr2) {expr3, expr4: stmt;}",
+            MatchStmt(listOf(expr(1), expr(2)), listOf(
+                Pair(listOf(expr(3), expr(4)), stmt())
+            ))),
+        Arguments.of("Underscore", "match (expr) {_: stmt;}",
+            MatchStmt(listOf(expr()), listOf(
+                Pair(listOf(AccessExpr("_", null)), stmt())
+            ))),
+        Arguments.of("Else", "match (expr) {else: stmt;}",
+            MatchStmt(listOf(expr()), listOf(
+                Pair(listOf(AccessExpr("else", null)), stmt())
+            )))
+    )
+
+    @ParameterizedTest(name = "{0}: {1}")
+    @MethodSource
+    fun testMatchStmt(name: String, input: String, expected: Stmt) {
+        test(input, expected)
+    }
+
+    private fun testForStmt() = listOf(
+        Arguments.of("For", "for (name in expr) stmt;", ForStmt("name", expr(), stmt())),
+        Arguments.of("Block", "for (name in expr) {stmt1; stmt2; stmt3;}",
+            ForStmt("name", expr(), BlockStmt(listOf(stmt(1), stmt(2), stmt(3)))))
+    )
+
+    @ParameterizedTest(name = "{0}: {1}")
+    @MethodSource
+    fun testForStmt(name: String, input: String, expected: Stmt) {
+        test(input, expected)
+    }
+
+    private fun testWhileStmt() = listOf(
+        Arguments.of("While", "while (expr) stmt;", WhileStmt(expr(), stmt())),
+        Arguments.of("Block", "while (expr) {stmt1; stmt2; stmt3;}",
+            WhileStmt(expr(), BlockStmt(listOf(stmt(1), stmt(2), stmt(3)))))
+    )
+
+    @ParameterizedTest(name = "{0}: {1}")
+    @MethodSource
+    fun testWhileStmt(name: String, input: String, expected: Stmt) {
+        test(input, expected)
+    }
+
+    private fun testTryStmt() = listOf(
+        Arguments.of("Try", "try stmt;", TryStmt(stmt(), null, null)),
+        Arguments.of("Catch", "try stmt1; catch stmt2;", TryStmt(stmt(1), stmt(2), null)),
+        Arguments.of("Finally", "try stmt1; finally stmt2;", TryStmt(stmt(1), null, stmt(2))),
+        Arguments.of("All", "try stmt1; catch {} finally {stmt2; stmt3; stmt4;}",
+            TryStmt(stmt(1), BlockStmt(listOf()), BlockStmt(listOf(stmt(2), stmt(3), stmt(4)))))
+    )
+
+    @ParameterizedTest(name = "{0}: {1}")
+    @MethodSource
+    fun testTryStmt(name: String, input: String, expected: Stmt) {
+        test(input, expected)
+    }
+
+    private fun testWithStmt() = listOf(
+        Arguments.of("Var", "with (var name = expr) stmt;",
+            WithStmt(true, "name", expr(), stmt())),
+        Arguments.of("Val", "with (val name = expr) stmt;",
+            WithStmt(false, "name", expr(), stmt())),
+        Arguments.of("Block", "with (val name = expr) {stmt1; stmt2; stmt3;}",
+            WithStmt(false, "name", expr(), BlockStmt(listOf(stmt(1), stmt(2), stmt(3)))))
+    )
+
+    @ParameterizedTest(name = "{0}: {1}")
+    @MethodSource
+    fun testWithStmt(name: String, input: String, expected: Stmt) {
+        test(input, expected)
+    }
+
+    private fun testLabelStmt() = listOf(
+        Arguments.of("Label", "label: stmt;", LabelStmt("label", stmt())),
+        Arguments.of("Loop", "label: while(expr) stmt;",
+            LabelStmt("label", WhileStmt(expr(), stmt())))
+    )
+
+    @ParameterizedTest(name = "{0}: {1}")
+    @MethodSource
+    fun testLabelStmt(name: String, input: String, expected: Stmt) {
+        test(input, expected)
+    }
+
+    private fun testJumpStmt() = listOf(
+        Arguments.of("Break", "break;", JumpStmt(JumpType.BREAK, null, null)),
+        Arguments.of("Continue", "continue;", JumpStmt(JumpType.CONTINUE, null, null)),
+        Arguments.of("Label", "break label;", JumpStmt(JumpType.BREAK, "label", null)),
+        Arguments.of("Return", "return;", JumpStmt(JumpType.RETURN, null, null)),
+        Arguments.of("Return Value", "return expr;", JumpStmt(JumpType.RETURN, null, expr())),
+        Arguments.of("Throw", "throw expr;", JumpStmt(JumpType.THROW, null, expr()))
+    )
+
+    @ParameterizedTest(name = "{0}: {1}")
+    @MethodSource
+    fun testJumpStmt(name: String, input: String, expected: Stmt) {
+        test(input, expected)
+    }
+
+    private fun testAssertStmt() = listOf(
+        Arguments.of("Assert", "assert expr;", AssertStmt(AssertType.ASSERT, expr())),
+        Arguments.of("Require", "require expr;", AssertStmt(AssertType.REQUIRE, expr())),
+        Arguments.of("Ensure", "ensure expr;", AssertStmt(AssertType.ENSURE, expr()))
+    )
+
+    @ParameterizedTest(name = "{0}: {1}")
+    @MethodSource
+    fun testAssertStmt(name: String, input: String, expected: Stmt) {
+        test(input, expected)
+    }
+
+    private fun test(input: String, expected: Stmt) {
+        Assertions.assertEquals(expected, Parser(Lexer(input).lex()).parseStmt());
+    }
+
+    private fun stmt(n: Int? = null): Stmt {
+        return ExpressionStmt(AccessExpr("stmt${n ?: ""}", null))
+    }
+
     private fun testLiteralExpr() = listOf(
         Arguments.of("Null", "null", null),
         Arguments.of("True", "true", true),
