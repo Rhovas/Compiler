@@ -14,9 +14,16 @@ class KotlinGenerator(private val writer: PrintWriter) {
 
     fun gen(obj: Any?) {
         when (obj) {
+            is Type -> genType(obj)
             is Stmt -> genStmt(obj)
             is Expr -> genExpr(obj)
         }
+    }
+
+    private fun genType(type: Type) {
+        writer.print(type.name)
+        genSeq(type.generics, "<", ", ", ">")
+        if (type.nullable) writer.print("?")
     }
 
     fun genStmt(stmt: Stmt) {
@@ -51,6 +58,10 @@ class KotlinGenerator(private val writer: PrintWriter) {
     private fun genDeclarationStmt(stmt: DeclarationStmt) {
         writer.print(if (stmt.mut) "var " else "val ")
         writer.print(stmt.name)
+        if (stmt.type != null) {
+            writer.print(" ")
+            genType(stmt.type)
+        }
         if (stmt.expr != null) {
             writer.print(" ")
             genExpr(stmt.expr)
