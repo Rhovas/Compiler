@@ -12,6 +12,30 @@ import org.junit.jupiter.params.provider.MethodSource
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class ParserTest {
 
+    private fun testType() = listOf(
+        Arguments.of("Type", "Type", type()),
+        Arguments.of("Mutable", "+Type",
+            Type(TypeMutability.MUTABLE, "Type", listOf(), false)),
+        Arguments.of("Immutable", "-Type",
+            Type(TypeMutability.IMMUTABLE, "Type", listOf(), false)),
+        Arguments.of("Nullable", "Type?",
+            Type(TypeMutability.VIEWABLE, "Type", listOf(), true)),
+        Arguments.of("Single Generic", "Type<Type1>",
+            Type(TypeMutability.VIEWABLE, "Type", listOf(type(1)), false)),
+        Arguments.of("Multiple Generics", "Type<Type1, Type2, Type3>",
+            Type(TypeMutability.VIEWABLE, "Type", listOf(type(1), type(2), type(3)), false))
+    )
+
+    @ParameterizedTest(name = "{0}: {1}")
+    @MethodSource
+    fun testType(name: String, input: String, expected: Type) {
+        Assertions.assertEquals(expected, Parser(Lexer(input).lex()).parseType())
+    }
+
+    private fun type(n: Int? = null): Type {
+        return Type(TypeMutability.VIEWABLE, "Type${n ?: ""}", listOf(), false)
+    }
+
     private fun testBlockStmt() = listOf(
         Arguments.of("Empty", "{}", BlockStmt(listOf())),
         Arguments.of("Single Statement", "{stmt;}", BlockStmt(listOf(stmt()))),
@@ -38,10 +62,12 @@ class ParserTest {
     }
 
     private fun testDeclarationStmt() = listOf(
-        Arguments.of("Var", "var name;", DeclarationStmt(true, "name", null)),
-        Arguments.of("Val", "val name;", DeclarationStmt(false, "name", null)),
-        Arguments.of("Var Init", "var name = expr;", DeclarationStmt(true, "name", expr())),
-        Arguments.of("Val Int", "val name = expr;", DeclarationStmt(false, "name", expr()))
+        Arguments.of("Var", "var name: Type;",
+            DeclarationStmt(true, "name", type(), null)),
+        Arguments.of("Val", "val name = expr;",
+            DeclarationStmt(false, "name", null, expr())),
+        Arguments.of("Type & Expr", "var name: Type = expr;",
+            DeclarationStmt(true, "name", type(), expr()))
     )
 
     @ParameterizedTest(name = "{0}: {1}")

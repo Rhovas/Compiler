@@ -7,6 +7,19 @@ class Parser(tokens: Sequence<Token>) {
 
     private val tokens = TokenStream(tokens.filter { it.type != TokenType.WHITESPACE }.toList())
 
+    fun parseType(): Type {
+        val mut = when {
+            match("+") -> TypeMutability.MUTABLE
+            match("-") -> TypeMutability.IMMUTABLE
+            else -> TypeMutability.VIEWABLE
+        }
+        assert(match(TokenType.IDENTIFIER))
+        val name = tokens[0]!!.literal
+        val generics = if (match("<")) parseSeq(",", ">", this::parseType) else listOf()
+        val nullable = match("?")
+        return Type(mut, name, generics, nullable)
+    }
+
     fun parseStmt(): Stmt {
         return when(tokens[1]?.literal) {
             "{" -> parseBlockStmt()
@@ -50,9 +63,10 @@ class Parser(tokens: Sequence<Token>) {
         val mut = tokens[0]!!.literal == "var"
         assert(match(TokenType.IDENTIFIER))
         val name = tokens[0]!!.literal
+        val type = if (match(":")) parseType() else null
         val expr = if (match("=")) parseExpr() else null
         assert(match(";"))
-        return DeclarationStmt(mut, name, expr)
+        return DeclarationStmt(mut, name, type, expr)
     }
 
     private fun parseIfStmt(): Stmt {

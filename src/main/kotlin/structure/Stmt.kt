@@ -4,7 +4,7 @@ sealed class Stmt
 
 data class BlockStmt(val stmts: List<Stmt>): Stmt()
 data class ExpressionStmt(val expr: Expr): Stmt()
-data class DeclarationStmt(val mut: Boolean, val name: String, val expr: Expr?): Stmt()
+data class DeclarationStmt(val mut: Boolean, val name: String, val type: Type?, val expr: Expr?): Stmt()
 data class AssignmentStmt(val expr: Expr, val value: Expr): Stmt()
 data class IfStmt(val expr: Expr, val then: Stmt, val else_: Stmt?): Stmt()
 data class MatchStmt(val exprs: List<Expr>, val cases: List<Pair<List<Expr>, Stmt>>): Stmt()
