@@ -36,6 +36,41 @@ class ParserTest {
         return Type(TypeMutability.VIEWABLE, "Type${n ?: ""}", listOf(), false)
     }
 
+    private fun testClassCmpt() = listOf(
+        Arguments.of("Empty", "class Type {}", ClassCmpt(type(), listOf(), listOf())),
+        Arguments.of("Extends", "class Type1: Type2 {}",
+            ClassCmpt(type(1), listOf(type(2)), listOf())),
+        Arguments.of("Members", "class Type1 { val name: Type2; ctor() stmt1; func name() stmt2; }",
+            ClassCmpt(type(1), listOf(), listOf(
+                FieldMbr(false, "name", type(2), null),
+                CtorMbr(listOf(), stmt(1)),
+                FuncMbr("name", listOf(), null, stmt(2))
+            )))
+    )
+
+    @ParameterizedTest(name = "{0}: {1}")
+    @MethodSource
+    fun testClassCmpt(name: String, input: String, expected: Cmpt) {
+        Assertions.assertEquals(expected, Parser(Lexer(input).lex()).parseCmpt())
+    }
+
+    private fun testInterfaceCmpt() = listOf(
+        Arguments.of("Empty", "interface Type {}", InterfaceCmpt(type(), listOf(), listOf())),
+        Arguments.of("Extends", "interface Type1: Type2 {}",
+            InterfaceCmpt(type(1), listOf(type(2)), listOf())),
+        Arguments.of("Members", "interface Type1 { val name: Type2; func name() stmt; }",
+            InterfaceCmpt(type(1), listOf(), listOf(
+                FieldMbr(false, "name", type(2), null),
+                FuncMbr("name", listOf(), null, stmt())
+            )))
+    )
+
+    @ParameterizedTest(name = "{0}: {1}")
+    @MethodSource
+    fun testInterfaceCmpt(name: String, input: String, expected: Cmpt) {
+        Assertions.assertEquals(expected, Parser(Lexer(input).lex()).parseCmpt())
+    }
+
     private fun testFieldMbr() = listOf(
         Arguments.of("Var", "var name: Type;", FieldMbr(true, "name", type(), null)),
         Arguments.of("Val", "val name = expr;", FieldMbr(false, "name", null, expr())),

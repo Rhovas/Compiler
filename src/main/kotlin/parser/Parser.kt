@@ -20,6 +20,36 @@ class Parser(tokens: Sequence<Token>) {
         return Type(mut, name, generics, nullable)
     }
 
+    fun parseCmpt(): Cmpt {
+        return when (tokens[1]?.literal) {
+            "class" -> parseClassCmpt()
+            "interface" -> parseInterfaceCmpt()
+            else -> throw AssertionError(tokens[1])
+        }
+    }
+
+    private fun parseClassCmpt(): ClassCmpt {
+        assert(match("class"))
+        val type = parseType()
+        val extds = if (match(":")) parseSeq(",", "{", this::parseType) else {
+            assert(match("{"))
+            listOf()
+        }
+        val mbrs = parseSeq(null, "}", this::parseMbr);
+        return ClassCmpt(type, extds, mbrs)
+    }
+
+    private fun parseInterfaceCmpt(): InterfaceCmpt {
+        assert(match("interface"))
+        val type = parseType()
+        val extds = if (match(":")) parseSeq(",", "{", this::parseType) else {
+            assert(match("{"))
+            listOf()
+        }
+        val mbrs = parseSeq(null, "}", this::parseMbr);
+        return InterfaceCmpt(type, extds, mbrs)
+    }
+
     fun parseMbr(): Mbr {
         return when (tokens[1]?.literal) {
             "var", "val" -> parseFieldMbr()

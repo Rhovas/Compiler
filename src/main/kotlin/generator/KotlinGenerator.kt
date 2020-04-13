@@ -15,6 +15,7 @@ class KotlinGenerator(private val writer: PrintWriter) {
     fun gen(obj: Any?) {
         when (obj) {
             is Type -> genType(obj)
+            is Cmpt -> genCmpt(obj)
             is Mbr -> genMbr(obj)
             is FuncParam -> genFuncParam(obj)
             is Stmt -> genStmt(obj)
@@ -26,6 +27,45 @@ class KotlinGenerator(private val writer: PrintWriter) {
         writer.print(type.name)
         genSeq(type.generics, "<", ", ", ">")
         if (type.nullable) writer.print("?")
+    }
+
+    fun genCmpt(cmpt: Cmpt) {
+        when (cmpt) {
+            is ClassCmpt -> genClassCmpt(cmpt)
+            is InterfaceCmpt -> genInterfaceCmpt(cmpt)
+        }
+    }
+
+    private fun genClassCmpt(cmpt: ClassCmpt) {
+        writer.print("class ")
+        genType(cmpt.type)
+        if (cmpt.extds.isNotEmpty()) {
+            writer.print(": ")
+            genSeq(cmpt.extds, null, ", ", null)
+        }
+        writer.print(" {")
+        genSeq(cmpt.mbrs,
+            { newline(0); newline(++indent) },
+            { newline(0); newline(indent) },
+            { newline(0); newline(--indent) }
+        )
+        writer.print("}")
+    }
+
+    private fun genInterfaceCmpt(cmpt: InterfaceCmpt) {
+        writer.print("interface ")
+        genType(cmpt.type)
+        if (cmpt.extds.isNotEmpty()) {
+            writer.print(": ")
+            genSeq(cmpt.extds, null, ", ", null)
+        }
+        writer.print("{")
+        genSeq(cmpt.mbrs,
+            { newline(0); newline(++indent) },
+            { newline(0); newline(indent) },
+            { newline(0); newline(--indent) }
+        )
+        writer.print("}")
     }
 
     fun genMbr(mbr: Mbr) {
