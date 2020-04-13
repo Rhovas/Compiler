@@ -36,6 +36,66 @@ class ParserTest {
         return Type(TypeMutability.VIEWABLE, "Type${n ?: ""}", listOf(), false)
     }
 
+    private fun testFieldMbr() = listOf(
+        Arguments.of("Var", "var name: Type;", FieldMbr(true, "name", type(), null)),
+        Arguments.of("Val", "val name = expr;", FieldMbr(false, "name", null, expr())),
+        Arguments.of("Type & Expr", "var name: Type = expr;",
+            FieldMbr(true, "name", type(), expr()))
+    )
+
+    @ParameterizedTest(name = "{0}: {1}")
+    @MethodSource
+    fun testFieldMbr(name: String, input: String, expected: Mbr) {
+        Assertions.assertEquals(expected, Parser(Lexer(input).lex()).parseMbr())
+    }
+
+    private fun testCtorMbr() = listOf(
+        Arguments.of("Empty", "ctor() {}", CtorMbr(listOf(), BlockStmt(listOf()))),
+        Arguments.of("Single Parameter", "ctor(param: Type) stmt;",
+            CtorMbr(listOf(FuncParam("param", type(), null)), stmt())),
+        Arguments.of("Multiple Parameters", "ctor(param1: Type1, param2: Type2, param3: Type3) stmt;",
+            CtorMbr(listOf(
+                FuncParam("param1", type(1), null),
+                FuncParam("param2", type(2), null),
+                FuncParam("param3", type(3), null)
+            ), stmt())),
+        Arguments.of("Default Argument", "ctor(param: Type = expr) stmt;",
+            CtorMbr(listOf(FuncParam("param", type(), expr())), stmt()))
+    )
+
+    @ParameterizedTest(name = "{0}: {1}")
+    @MethodSource
+    fun testCtorMbr(name: String, input: String, expected: Mbr) {
+        Assertions.assertEquals(expected, Parser(Lexer(input).lex()).parseMbr())
+    }
+
+    private fun testFuncMbr() = listOf(
+        Arguments.of("Empty", "func name() {}",
+            FuncMbr("name", listOf(), null, BlockStmt(listOf()))),
+        Arguments.of("Single Parameter", "func name(param: Type) stmt;",
+            FuncMbr("name", listOf(FuncParam("param", type(), null)), null, stmt())),
+        Arguments.of("Multiple Parameters", "func name(param1: Type1, param2: Type2, param3: Type3) stmt;",
+            FuncMbr("name", listOf(
+                FuncParam("param1", type(1), null),
+                FuncParam("param2", type(2), null),
+                FuncParam("param3", type(3), null)
+            ), null, stmt())),
+        Arguments.of("Default Argument", "func name(param: Type = expr) stmt;",
+            FuncMbr("name", listOf(FuncParam("param", type(), expr())), null, stmt())),
+        Arguments.of("Return Type", "func name(): Type stmt;",
+            FuncMbr("name", listOf(), type(), stmt()))
+    )
+
+    @ParameterizedTest(name = "{0}: {1}")
+    @MethodSource
+    fun testFuncMbr(name: String, input: String, expected: Mbr) {
+        Assertions.assertEquals(expected, Parser(Lexer(input).lex()).parseMbr())
+    }
+
+    private fun test(input: String, expected: Mbr) {
+        Assertions.assertEquals(expected, Parser(Lexer(input).lex()).parseMbr())
+    }
+
     private fun testBlockStmt() = listOf(
         Arguments.of("Empty", "{}", BlockStmt(listOf())),
         Arguments.of("Single Statement", "{stmt;}", BlockStmt(listOf(stmt()))),

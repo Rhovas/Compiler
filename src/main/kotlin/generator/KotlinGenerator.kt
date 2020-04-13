@@ -15,6 +15,8 @@ class KotlinGenerator(private val writer: PrintWriter) {
     fun gen(obj: Any?) {
         when (obj) {
             is Type -> genType(obj)
+            is Mbr -> genMbr(obj)
+            is FuncParam -> genFuncParam(obj)
             is Stmt -> genStmt(obj)
             is Expr -> genExpr(obj)
         }
@@ -24,6 +26,57 @@ class KotlinGenerator(private val writer: PrintWriter) {
         writer.print(type.name)
         genSeq(type.generics, "<", ", ", ">")
         if (type.nullable) writer.print("?")
+    }
+
+    fun genMbr(mbr: Mbr) {
+        when (mbr) {
+            is FieldMbr -> genFieldMbr(mbr)
+            is CtorMbr -> genCtorMbr(mbr)
+            is FuncMbr -> genFuncMbr(mbr)
+        }
+    }
+
+    private fun genFieldMbr(mbr: FieldMbr) {
+        writer.print("val ")
+        writer.print(mbr.name)
+        if (mbr.type != null) {
+            writer.print(": ")
+            genType(mbr.type)
+        }
+        if (mbr.expr != null) {
+            writer.print(" = ")
+            genExpr(mbr.expr)
+        }
+        writer.print(';')
+    }
+
+    private fun genCtorMbr(mbr: CtorMbr) {
+        writer.print("constructor")
+        genSeq(mbr.params, "(", ", ", ")")
+        writer.print(" ")
+        genStmt(mbr.stmt)
+    }
+
+    private fun genFuncMbr(mbr: FuncMbr) {
+        writer.print("fun ")
+        writer.print(mbr.name)
+        genSeq(mbr.params, "(", ", ", ")")
+        if (mbr.type != null) {
+            writer.print(": ")
+            genType(mbr.type)
+        }
+        writer.print(" ")
+        genStmt(mbr.stmt)
+    }
+
+    private fun genFuncParam(param: FuncParam) {
+        writer.print(param.name)
+        writer.print(": ")
+        genType(param.type)
+        if (param.expr != null) {
+            writer.print(" = ")
+            genExpr(param.expr)
+        }
     }
 
     fun genStmt(stmt: Stmt) {

@@ -20,6 +20,54 @@ class Parser(tokens: Sequence<Token>) {
         return Type(mut, name, generics, nullable)
     }
 
+    fun parseMbr(): Mbr {
+        return when (tokens[1]?.literal) {
+            "var", "val" -> parseFieldMbr()
+            "ctor" -> parseCtorMbr()
+            "func" -> parseFuncMbr()
+            else -> throw AssertionError(tokens[1])
+        }
+    }
+
+    private fun parseFieldMbr(): FieldMbr {
+        assert(match("var", "val"))
+        val mut = tokens[0]!!.literal == "var"
+        assert(match(TokenType.IDENTIFIER))
+        val name = tokens[0]!!.literal
+        val type = if (match(":")) parseType() else null
+        val expr = if (match("=")) parseExpr() else null
+        assert(match(";"))
+        return FieldMbr(mut, name, type, expr)
+    }
+
+    private fun parseCtorMbr(): CtorMbr {
+        assert(match("ctor"))
+        assert(match("("))
+        val params = parseSeq(",", ")", this::parseFuncParam)
+        val stmt = parseStmt()
+        return CtorMbr(params, stmt)
+    }
+
+    private fun parseFuncMbr(): FuncMbr {
+        assert(match("func"))
+        assert(match(TokenType.IDENTIFIER))
+        val name = tokens[0]!!.literal
+        assert(match("("))
+        val params = parseSeq(",", ")", this::parseFuncParam)
+        val ret = if (match(":")) parseType() else null
+        val stmt = parseStmt()
+        return FuncMbr(name, params, ret, stmt)
+    }
+
+    private fun parseFuncParam(): FuncParam {
+        assert(match(TokenType.IDENTIFIER))
+        val name = tokens[0]!!.literal
+        assert(match(":"))
+        val type = parseType()
+        val expr = if (match("=")) parseExpr() else null
+        return FuncParam(name, type, expr)
+    }
+
     fun parseStmt(): Stmt {
         return when(tokens[1]?.literal) {
             "{" -> parseBlockStmt()
