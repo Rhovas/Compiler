@@ -5,7 +5,7 @@ import java.io.PrintWriter
 
 class KotlinGenerator(private val writer: PrintWriter) {
 
-    private var indent = 0;
+    private var indent = 0
 
     private fun newline(indent: Int) {
         writer.println()
@@ -26,9 +26,11 @@ class KotlinGenerator(private val writer: PrintWriter) {
     }
 
     private fun genSrc(src: Src) {
-        genSeq(src.impts, null, { newline(indent) }, { newline(0); newline(indent) })
-        genSeq(src.cmpts, null, { newline(indent) }, { newline(0); newline(indent) })
-        genSeq(src.mbrs, null, { newline(indent) }, { newline(0); newline(indent) })
+        genSeq(src.impts, null, { newline(indent) }, { newline(0) })
+        genSeq(src.cmpts + src.mbrs,
+            { if (src.impts.isNotEmpty()) newline(indent) },
+            { newline(0); newline(indent) },
+            { newline(0) })
     }
 
     private fun genImpt(impt: Impt) {
@@ -94,7 +96,7 @@ class KotlinGenerator(private val writer: PrintWriter) {
     }
 
     private fun genFieldMbr(mbr: FieldMbr) {
-        writer.print("val ")
+        writer.print(if (mbr.mut) "var " else "val ")
         writer.print(mbr.name)
         if (mbr.type != null) {
             writer.print(": ")
@@ -104,7 +106,6 @@ class KotlinGenerator(private val writer: PrintWriter) {
             writer.print(" = ")
             genExpr(mbr.expr)
         }
-        writer.print(';')
     }
 
     private fun genCtorMbr(mbr: CtorMbr) {
@@ -117,7 +118,9 @@ class KotlinGenerator(private val writer: PrintWriter) {
     private fun genFuncMbr(mbr: FuncMbr) {
         writer.print("fun ")
         writer.print(mbr.name)
-        genSeq(mbr.params, "(", ", ", ")")
+        writer.print("(")
+        genSeq(mbr.params, null, ", ", null)
+        writer.print(")")
         if (mbr.type != null) {
             writer.print(": ")
             genType(mbr.type)
@@ -162,28 +165,25 @@ class KotlinGenerator(private val writer: PrintWriter) {
 
     private fun genExpressionStmt(stmt: ExpressionStmt) {
         genExpr(stmt.expr)
-        writer.print(";")
     }
 
     private fun genDeclarationStmt(stmt: DeclarationStmt) {
         writer.print(if (stmt.mut) "var " else "val ")
         writer.print(stmt.name)
         if (stmt.type != null) {
-            writer.print(" ")
+            writer.print(": ")
             genType(stmt.type)
         }
         if (stmt.expr != null) {
-            writer.print(" ")
+            writer.print(" = ")
             genExpr(stmt.expr)
         }
-        writer.print(";")
     }
 
     private fun genAssignmentStmt(stmt: AssignmentStmt) {
         genExpr(stmt.expr)
         writer.print(" = ")
         genExpr(stmt.value)
-        writer.print(";")
     }
 
     private fun genIfStmt(stmt: IfStmt) {
@@ -205,7 +205,6 @@ class KotlinGenerator(private val writer: PrintWriter) {
             writer.print(it.index)
             writer.print(" = ")
             genExpr(it.value)
-            writer.print(";")
             newline(indent)
         }
         writer.print("when {")
@@ -281,7 +280,7 @@ class KotlinGenerator(private val writer: PrintWriter) {
             genSeq(stmt.stmt.stmts, { newline(++indent) }, { newline(indent) }, { newline(--indent) })
             writer.print("}")
         } else {
-            genStmt(stmt)
+            genStmt(stmt.stmt)
         }
     }
 
@@ -301,14 +300,13 @@ class KotlinGenerator(private val writer: PrintWriter) {
             writer.print(" ")
             genExpr(stmt.expr)
         }
-        writer.print(";")
     }
 
     private fun genAssertStmt(stmt: AssertStmt) {
         writer.print(if (stmt.type != AssertType.ENSURE) stmt.type.name.toLowerCase() else "check")
         writer.print("(")
         genExpr(stmt.expr)
-        writer.print(");")
+        writer.print(")")
     }
 
     fun genExpr(expr: Expr) {
@@ -333,18 +331,20 @@ class KotlinGenerator(private val writer: PrintWriter) {
 
     private fun genGroupExpr(expr: GroupExpr) {
         writer.print("(")
-        genExpr(expr)
+        genExpr(expr.expr)
         writer.print(")")
     }
 
     private fun genUnaryExpr(expr: UnaryExpr) {
         writer.print(expr.op)
-        genExpr(expr)
+        genExpr(expr.expr)
     }
 
     private fun genBinaryExpr(expr: BinaryExpr) {
         genExpr(expr.left)
+        writer.print(" ")
         writer.print(expr.op)
+        writer.print(" ")
         genExpr(expr.right)
     }
 
