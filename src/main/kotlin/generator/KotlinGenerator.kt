@@ -14,12 +14,29 @@ class KotlinGenerator(private val writer: PrintWriter) {
 
     fun gen(obj: Any?) {
         when (obj) {
+            is Src -> genSrc(obj)
+            is Impt -> genImpt(obj)
             is Type -> genType(obj)
             is Cmpt -> genCmpt(obj)
             is Mbr -> genMbr(obj)
             is FuncParam -> genFuncParam(obj)
             is Stmt -> genStmt(obj)
             is Expr -> genExpr(obj)
+        }
+    }
+
+    private fun genSrc(src: Src) {
+        genSeq(src.impts, null, { newline(indent) }, { newline(0); newline(indent) })
+        genSeq(src.cmpts, null, { newline(indent) }, { newline(0); newline(indent) })
+        genSeq(src.mbrs, null, { newline(indent) }, { newline(0); newline(indent) })
+    }
+
+    private fun genImpt(impt: Impt) {
+        writer.print("import ")
+        writer.print(impt.path.joinToString("."))
+        if (impt.alias != null) {
+            writer.print(" as ")
+            writer.print(impt.alias)
         }
     }
 

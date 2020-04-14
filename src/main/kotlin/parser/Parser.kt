@@ -7,6 +7,38 @@ class Parser(tokens: Sequence<Token>) {
 
     private val tokens = TokenStream(tokens.filter { it.type != TokenType.WHITESPACE }.toList())
 
+    fun parseSrc(): Src {
+        val impts = mutableListOf<Impt>()
+        while (tokens[1]?.literal == "import") {
+            impts.add(parseImpt())
+        }
+        val cmpts = mutableListOf<Cmpt>()
+        val mbrs = mutableListOf<Mbr>()
+        while (tokens[1] !== null) {
+            when (tokens[1]?.literal) {
+                "class", "interface" -> cmpts.add(parseCmpt())
+                "var", "val", "ctor", "func" -> mbrs.add(parseMbr())
+                else -> throw AssertionError(tokens[1])
+            }
+        }
+        return Src(impts, cmpts, mbrs)
+    }
+
+    fun parseImpt(): Impt {
+        assert(match("import"))
+        val path = mutableListOf<String>()
+        do {
+            assert(match(TokenType.IDENTIFIER))
+            path.add(tokens[0]!!.literal)
+        } while (match("."))
+        val alias = if (match("as")) {
+            assert(match(TokenType.IDENTIFIER))
+            tokens[0]!!.literal
+        } else null
+        assert(match(";"))
+        return Impt(path, alias)
+    }
+
     fun parseType(): Type {
         val mut = when {
             match("+") -> TypeMutability.MUTABLE

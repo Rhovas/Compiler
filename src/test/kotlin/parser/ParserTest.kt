@@ -12,6 +12,40 @@ import org.junit.jupiter.params.provider.MethodSource
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class ParserTest {
 
+    private fun testSrc() = listOf(
+        Arguments.of("Import", "import path;",
+            Src(listOf(Impt(listOf("path"), null)), listOf(), listOf())),
+        Arguments.of("Component", "class Type {}",
+            Src(listOf(), listOf(ClassCmpt(type(), listOf(), listOf())), listOf())),
+        Arguments.of("Member", "func name() stmt;",
+            Src(listOf(), listOf(), listOf(FuncMbr("name", listOf(), null, stmt())))),
+        Arguments.of("All", "import path; class Type {} func name() stmt;",
+            Src(
+                listOf(Impt(listOf("path"), null)),
+                listOf(ClassCmpt(type(), listOf(), listOf())),
+                listOf(FuncMbr("name", listOf(), null, stmt()))
+            )
+        )
+    )
+
+    @ParameterizedTest(name = "{0}: {1}")
+    @MethodSource
+    fun testSrc(name: String, input: String, expected: Src) {
+        Assertions.assertEquals(expected, Parser(Lexer(input).lex()).parseSrc())
+    }
+
+    private fun testImpt() = listOf(
+        Arguments.of("Single Name", "import name;", Impt(listOf("name"), null)),
+        Arguments.of("Multiple Names", "import x.y.z;", Impt(listOf("x", "y", "z"), null)),
+        Arguments.of("Alias", "import path as name;", Impt(listOf("path"), "name"))
+    )
+
+    @ParameterizedTest(name = "{0}: {1}")
+    @MethodSource
+    fun testImpt(name: String, input: String, expected: Impt) {
+        Assertions.assertEquals(expected, Parser(Lexer(input).lex()).parseImpt())
+    }
+
     private fun testType() = listOf(
         Arguments.of("Type", "Type", type()),
         Arguments.of("Mutable", "+Type",
