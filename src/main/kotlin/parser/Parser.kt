@@ -192,6 +192,12 @@ class Parser(tokens: Sequence<Token>) {
     private fun parseMatchStmt(): Stmt {
         assert(match("match"))
         assert(match("("))
+        val name: String? = if (isMatch(1, TokenType.IDENTIFIER) && isMatch(2, "=")) {
+            assert(match(TokenType.IDENTIFIER))
+            val name = tokens[0]!!.literal
+            assert(match("="))
+            name
+        } else null
         val exprs = parseSeq(",", ")", this::parseExpr)
         assert(match("{"))
         val cases = parseSeq(null, "}") {
@@ -199,7 +205,7 @@ class Parser(tokens: Sequence<Token>) {
                 if (match("_")) AccessExpr(this.tokens[0]!!.literal, null) else parseExpr()
             }, parseStmt())
         }
-        return MatchStmt(exprs, cases)
+        return MatchStmt(name, exprs, cases)
     }
 
     private fun parseForStmt(): Stmt {
@@ -234,15 +240,13 @@ class Parser(tokens: Sequence<Token>) {
     private fun parseWithStmt(): Stmt {
         assert(match("with"))
         assert(match("("))
-        assert(match("var", "val"))
-        val mut = tokens[0]!!.literal == "var"
         assert(match(TokenType.IDENTIFIER))
         val name = tokens[0]!!.literal
         assert(match("="))
         val expr = parseExpr()
         assert(match(")"))
         val stmt = parseStmt()
-        return WithStmt(mut, name, expr, stmt)
+        return WithStmt(name, expr, stmt)
     }
 
     private fun parseJumpStmt(): Stmt {

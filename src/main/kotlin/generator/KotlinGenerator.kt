@@ -201,8 +201,8 @@ class KotlinGenerator(private val writer: PrintWriter) {
         writer.print("run {")
         newline(++indent)
         stmt.exprs.withIndex().forEach {
-            writer.print("val obj")
-            writer.print(it.index)
+            writer.print("val ")
+            writer.print(stmt.name ?: "_obj${it.index}")
             writer.print(" = ")
             genExpr(it.value)
             newline(indent)
@@ -216,8 +216,7 @@ class KotlinGenerator(private val writer: PrintWriter) {
                 .filter { it.value !is AccessExpr || (it.value as AccessExpr).name !in listOf("else", "_") }
             if (exprs.isNotEmpty()) {
                 exprs.forEach {
-                    writer.print("obj")
-                    writer.print(it.index)
+                    writer.print(stmt.name ?: "_obj${it.index}")
                     writer.print(" == ")
                     genExpr(it.value)
                     if (it !== exprs.last()) {
@@ -273,7 +272,6 @@ class KotlinGenerator(private val writer: PrintWriter) {
     private fun genWithStmt(stmt: WithStmt) {
         writer.print(stmt.expr)
         writer.print(".use { ")
-        assert(stmt.mut) //TODO
         writer.print(stmt.name)
         writer.print(" -> ")
         if (stmt.stmt is BlockStmt) {

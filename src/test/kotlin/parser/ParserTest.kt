@@ -235,21 +235,19 @@ class ParserTest {
 
     private fun testMatchStmt() = listOf(
         Arguments.of("Conditional", "match () {expr1: stmt1; expr2: stmt2; expr3: stmt3;}",
-            MatchStmt(listOf(), listOf(
+            MatchStmt(null, listOf(), listOf(
                 Pair(listOf(expr(1)), stmt(1)),
                 Pair(listOf(expr(2)), stmt(2)),
                 Pair(listOf(expr(3)), stmt(3))
             ))),
         Arguments.of("Structural", "match (expr1, expr2) {expr3, expr4: stmt;}",
-            MatchStmt(listOf(expr(1), expr(2)), listOf(
+            MatchStmt(null, listOf(expr(1), expr(2)), listOf(
                 Pair(listOf(expr(3), expr(4)), stmt())
             ))),
-        Arguments.of("Underscore", "match (expr) {_: stmt;}",
-            MatchStmt(listOf(expr()), listOf(
-                Pair(listOf(AccessExpr("_", null)), stmt())
-            ))),
+        Arguments.of("Declaration", "match (name = expr) {}",
+            MatchStmt("name", listOf(expr()), listOf())),
         Arguments.of("Else", "match (expr) {else: stmt;}",
-            MatchStmt(listOf(expr()), listOf(
+            MatchStmt(null, listOf(expr()), listOf(
                 Pair(listOf(AccessExpr("else", null)), stmt())
             )))
     )
@@ -299,12 +297,10 @@ class ParserTest {
     }
 
     private fun testWithStmt() = listOf(
-        Arguments.of("Var", "with (var name = expr) stmt;",
-            WithStmt(true, "name", expr(), stmt())),
-        Arguments.of("Val", "with (val name = expr) stmt;",
-            WithStmt(false, "name", expr(), stmt())),
-        Arguments.of("Block", "with (val name = expr) {stmt1; stmt2; stmt3;}",
-            WithStmt(false, "name", expr(), BlockStmt(listOf(stmt(1), stmt(2), stmt(3)))))
+        Arguments.of("With", "with (name = expr) stmt;",
+            WithStmt("name", expr(), stmt())),
+        Arguments.of("Block", "with (name = expr) {stmt1; stmt2; stmt3;}",
+            WithStmt("name", expr(), BlockStmt(listOf(stmt(1), stmt(2), stmt(3)))))
     )
 
     @ParameterizedTest(name = "{0}: {1}")
