@@ -43,9 +43,19 @@ class KotlinGenerator(private val writer: PrintWriter) {
     }
 
     private fun genType(type: Type) {
-        writer.print(type.name)
-        genSeq(type.generics, "<", ", ", ">")
-        if (type.nullable) writer.print("?")
+        when (type) {
+            is BaseType -> {
+                writer.print(type.name)
+                genSeq(type.generics, "<", ", ", ">")
+                if (type.nullable) writer.print("?")
+            }
+            is FuncType -> {
+                writer.print("(")
+                genSeq(type.params, null, ",", null)
+                writer.print(") -> ")
+                genType(type.ret)
+            }
+        }
     }
 
     fun genCmpt(cmpt: Cmpt) {
@@ -319,6 +329,7 @@ class KotlinGenerator(private val writer: PrintWriter) {
             is AccessExpr -> genAccessExpr(expr)
             is FunctionExpr -> genFunctionExpr(expr)
             is IndexExpr -> genIndexExpr(expr)
+            is LambdaExpr -> genLambdaExpr(expr)
         }
     }
 
@@ -373,6 +384,22 @@ class KotlinGenerator(private val writer: PrintWriter) {
         writer.print("[")
         genSeq(expr.exprs, null,", ", null)
         writer.print("]")
+    }
+
+    private fun genLambdaExpr(expr: LambdaExpr) {
+        writer.print("{")
+        genSeq(expr.params, " (", ",", ") -> ")
+        if (expr.stmt is BlockStmt) {
+            if (expr.stmt.stmts.size == 1) {
+                genStmt(expr.stmt.stmts[0])
+                writer.print(" ")
+            } else {
+                genSeq(expr.stmt.stmts, { newline(++indent) }, { newline(indent) }, { newline(--indent) })
+            }
+        } else {
+            genStmt(expr.stmt)
+        }
+        writer.print("}")
     }
 
     private fun <T> genSeq(seq: List<T>, start: Any?, sep: Any?, end: Any?) {

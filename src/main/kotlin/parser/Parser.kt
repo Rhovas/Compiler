@@ -40,6 +40,13 @@ class Parser(tokens: Sequence<Token>) {
     }
 
     fun parseType(): Type {
+        if (match("(")) {
+            val types = parseSeq(",", ")", this::parseType)
+            assert(match("-"))
+            assert(match(">"))
+            val ret = parseType()
+            return FuncType(types, ret)
+        }
         val mut = when {
             match("+") -> TypeMutability.MUTABLE
             match("-") -> TypeMutability.IMMUTABLE
@@ -49,7 +56,7 @@ class Parser(tokens: Sequence<Token>) {
         val name = tokens[0]!!.literal
         val generics = if (match("<")) parseSeq(",", ">", this::parseType) else listOf()
         val nullable = match("?")
-        return Type(mut, name, generics, nullable)
+        return BaseType(mut, name, generics, nullable)
     }
 
     fun parseCmpt(): Cmpt {
@@ -367,8 +374,23 @@ class Parser(tokens: Sequence<Token>) {
                 assert(match(")"))
                 GroupExpr(expr)
             }
+            isMatch(1, "{") -> parseLambdaExpr()
             else -> throw AssertionError(tokens[1])
         }
+    }
+
+    private fun parseLambdaExpr(): LambdaExpr {
+        assert(match("{"))
+        val params = if (match("(")) parseSeq(",", ")") {
+            assert(match(TokenType.IDENTIFIER))
+            tokens[0]!!.literal
+        } else listOf()
+        if (params.isNotEmpty()) {
+            assert(match("-"))
+            assert(match(">"))
+        }
+        val stmts = parseSeq(null, "}", this::parseStmt)
+        return LambdaExpr(params, if (stmts.size == 1) stmts[0] else BlockStmt(stmts))
     }
 
     private fun <T> parseSeq(sep: String?, end: String, parser: () -> T): List<T> {

@@ -49,15 +49,18 @@ class ParserTest {
     private fun testType() = listOf(
         Arguments.of("Type", "Type", type()),
         Arguments.of("Mutable", "+Type",
-            Type(TypeMutability.MUTABLE, "Type", listOf(), false)),
+            BaseType(TypeMutability.MUTABLE, "Type", listOf(), false)),
         Arguments.of("Immutable", "-Type",
-            Type(TypeMutability.IMMUTABLE, "Type", listOf(), false)),
+            BaseType(TypeMutability.IMMUTABLE, "Type", listOf(), false)),
         Arguments.of("Nullable", "Type?",
-            Type(TypeMutability.VIEWABLE, "Type", listOf(), true)),
+            BaseType(TypeMutability.VIEWABLE, "Type", listOf(), true)),
         Arguments.of("Single Generic", "Type<Type1>",
-            Type(TypeMutability.VIEWABLE, "Type", listOf(type(1)), false)),
+            BaseType(TypeMutability.VIEWABLE, "Type", listOf(type(1)), false)),
         Arguments.of("Multiple Generics", "Type<Type1, Type2, Type3>",
-            Type(TypeMutability.VIEWABLE, "Type", listOf(type(1), type(2), type(3)), false))
+            BaseType(TypeMutability.VIEWABLE,
+                "Type", listOf(type(1), type(2), type(3)), false)),
+        Arguments.of("Function Type", "(Type1, Type2, Type3) -> Type4",
+            FuncType(listOf(type(1), type(2), type(3)), type(4)))
     )
 
     @ParameterizedTest(name = "{0}: {1}")
@@ -67,7 +70,7 @@ class ParserTest {
     }
 
     private fun type(n: Int? = null): Type {
-        return Type(TypeMutability.VIEWABLE, "Type${n ?: ""}", listOf(), false)
+        return BaseType(TypeMutability.VIEWABLE, "Type${n ?: ""}", listOf(), false)
     }
 
     private fun testClassCmpt() = listOf(
@@ -478,6 +481,21 @@ class ParserTest {
     @ParameterizedTest(name = "{0}: {1}")
     @MethodSource
     fun testIndexExpr(name: String, input: String, expected: Expr) {
+        test(input, expected)
+    }
+
+    private fun testLambdaExpr() = listOf(
+        Arguments.of("Zero Arguments", "{ stmt; }", LambdaExpr(listOf(), stmt())),
+        Arguments.of("Single Argument", "{ (name) -> stmt; }", LambdaExpr(listOf("name"), stmt())),
+        Arguments.of("Multiple Arguments", "{ (name1, name2, name3) -> stmt; }",
+            LambdaExpr(listOf("name1", "name2", "name3"), stmt())),
+        Arguments.of("Block", "{ stmt1; stmt2; stmt3; }",
+            LambdaExpr(listOf(), BlockStmt(listOf(stmt(1), stmt(2), stmt(3)))))
+    )
+
+    @ParameterizedTest(name = "{0}: {1}")
+    @MethodSource
+    fun testLambdaExpr(name: String, input: String, expected: Expr) {
         test(input, expected)
     }
 
