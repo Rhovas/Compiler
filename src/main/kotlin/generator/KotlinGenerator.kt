@@ -257,11 +257,14 @@ class KotlinGenerator(private val writer: PrintWriter) {
 
     private fun genTryStmt(stmt: TryStmt) {
         writer.print("try ")
-        writer.print(stmt.stmt)
+        genStmt(stmt.stmt)
         if (stmt.catch != null) {
-            //TODO: Fix catch blocks
-            writer.print(" catch(e: Exception) ")
-            genStmt(stmt.catch)
+            writer.print(" catch(")
+            writer.print(stmt.catch.first)
+            writer.print(": ")
+            genType(stmt.catch.second)
+            writer.print(") ")
+            genStmt(stmt.catch.third)
         }
         if (stmt.finally != null) {
             writer.print(" finally ")
@@ -270,7 +273,7 @@ class KotlinGenerator(private val writer: PrintWriter) {
     }
 
     private fun genWithStmt(stmt: WithStmt) {
-        writer.print(stmt.expr)
+        genExpr(stmt.expr)
         writer.print(".use { ")
         writer.print(stmt.name)
         writer.print(" -> ")

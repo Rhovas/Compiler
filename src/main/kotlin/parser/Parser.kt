@@ -232,7 +232,16 @@ class Parser(tokens: Sequence<Token>) {
     private fun parseTryStmt(): Stmt {
         assert(match("try"))
         val stmt = parseStmt()
-        val catch = if (match("catch")) parseStmt() else null
+        val catch = if (match("catch")) {
+            match("(")
+            match(TokenType.IDENTIFIER)
+            val name = tokens[0]!!.literal
+            match(":")
+            val type = parseType()
+            match(")")
+            val stmt = parseStmt()
+            Triple(name, type, stmt)
+        } else null
         val finally = if (match("finally")) parseStmt() else null
         return TryStmt(stmt, catch, finally)
     }

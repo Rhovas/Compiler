@@ -284,10 +284,12 @@ class ParserTest {
 
     private fun testTryStmt() = listOf(
         Arguments.of("Try", "try stmt;", TryStmt(stmt(), null, null)),
-        Arguments.of("Catch", "try stmt1; catch stmt2;", TryStmt(stmt(1), stmt(2), null)),
-        Arguments.of("Finally", "try stmt1; finally stmt2;", TryStmt(stmt(1), null, stmt(2))),
-        Arguments.of("All", "try stmt1; catch {} finally {stmt2; stmt3; stmt4;}",
-            TryStmt(stmt(1), BlockStmt(listOf()), BlockStmt(listOf(stmt(2), stmt(3), stmt(4)))))
+        Arguments.of("Catch", "try stmt1; catch (name: Type) stmt2;",
+            TryStmt(stmt(1), Triple("name", type(), stmt(2)), null)),
+        Arguments.of("Finally", "try stmt1; finally { stmt2; stmt3; stmt4; }",
+            TryStmt(stmt(1), null, BlockStmt(listOf(stmt(2), stmt(3), stmt(4))))),
+        Arguments.of("All", "try stmt1; catch (name: Type) stmt2; finally stmt3;",
+            TryStmt(stmt(1), Triple("name", type(), stmt(2)), stmt(3)))
     )
 
     @ParameterizedTest(name = "{0}: {1}")
