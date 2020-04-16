@@ -62,6 +62,7 @@ class KotlinGenerator(private val writer: PrintWriter) {
         when (cmpt) {
             is ClassCmpt -> genClassCmpt(cmpt)
             is InterfaceCmpt -> genInterfaceCmpt(cmpt)
+            is StructCmpt -> genStructCmpt(cmpt)
         }
     }
 
@@ -88,8 +89,40 @@ class KotlinGenerator(private val writer: PrintWriter) {
             writer.print(": ")
             genSeq(cmpt.extds, null, ", ", null)
         }
-        writer.print("{")
+        writer.print(" {")
         genSeq(cmpt.mbrs,
+            { newline(0); newline(++indent) },
+            { newline(0); newline(indent) },
+            { newline(0); newline(--indent) }
+        )
+        writer.print("}")
+    }
+
+    private fun genStructCmpt(cmpt: StructCmpt) {
+        writer.print("data class ")
+        genType(cmpt.type)
+        val fields = cmpt.mbrs.filterIsInstance<FieldMbr>()
+        writer.print("(")
+        fields.forEach {
+            writer.print(if (it.mut) "var " else "val ")
+            writer.print(it.name)
+            writer.print(": ")
+            genType(it.type!!)
+            if (it.expr != null) {
+                writer.print(" = ")
+                genExpr(it.expr)
+            }
+            if (it !== fields.last()) {
+                writer.print(", ")
+            }
+        }
+        writer.print(")")
+        if (cmpt.extds.isNotEmpty()) {
+            writer.print(": ")
+            genSeq(cmpt.extds, null, ", ", null)
+        }
+        writer.print(" {")
+        genSeq(cmpt.mbrs.filter { it !is FieldMbr },
             { newline(0); newline(++indent) },
             { newline(0); newline(indent) },
             { newline(0); newline(--indent) }

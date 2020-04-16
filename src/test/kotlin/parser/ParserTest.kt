@@ -108,6 +108,23 @@ class ParserTest {
         Assertions.assertEquals(expected, Parser(Lexer(input).lex()).parseCmpt())
     }
 
+    private fun testStructCmpt() = listOf(
+        Arguments.of("Empty", "struct Type {}", StructCmpt(type(), listOf(), listOf())),
+        Arguments.of("Extends", "struct Type1: Type2 {}",
+            StructCmpt(type(1), listOf(type(2)), listOf())),
+        Arguments.of("Members", "struct Type1 { val name: Type2; func name() stmt; }",
+            StructCmpt(type(1), listOf(), listOf(
+                FieldMbr(false, "name", type(2), null),
+                FuncMbr("name", listOf(), null, stmt())
+            )))
+    )
+
+    @ParameterizedTest(name = "{0}: {1}")
+    @MethodSource
+    fun testStructCmpt(name: String, input: String, expected: Cmpt) {
+        Assertions.assertEquals(expected, Parser(Lexer(input).lex()).parseCmpt())
+    }
+
     private fun testFieldMbr() = listOf(
         Arguments.of("Var", "var name: Type;", FieldMbr(true, "name", type(), null)),
         Arguments.of("Val", "val name = expr;", FieldMbr(false, "name", null, expr())),

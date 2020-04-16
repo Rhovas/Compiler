@@ -16,7 +16,7 @@ class Parser(tokens: Sequence<Token>) {
         val mbrs = mutableListOf<Mbr>()
         while (tokens[1] !== null) {
             when (tokens[1]?.literal) {
-                "class", "interface" -> cmpts.add(parseCmpt())
+                "class", "interface", "struct" -> cmpts.add(parseCmpt())
                 "var", "val", "ctor", "func" -> mbrs.add(parseMbr())
                 else -> throw AssertionError(tokens[1])
             }
@@ -63,6 +63,7 @@ class Parser(tokens: Sequence<Token>) {
         return when (tokens[1]?.literal) {
             "class" -> parseClassCmpt()
             "interface" -> parseInterfaceCmpt()
+            "struct" -> parseStructCmpt()
             else -> throw AssertionError(tokens[1])
         }
     }
@@ -87,6 +88,17 @@ class Parser(tokens: Sequence<Token>) {
         }
         val mbrs = parseSeq(null, "}", this::parseMbr);
         return InterfaceCmpt(type, extds, mbrs)
+    }
+
+    private fun parseStructCmpt(): StructCmpt {
+        assert(match("struct"))
+        val type = parseType()
+        val extds = if (match(":")) parseSeq(",", "{", this::parseType) else {
+            assert(match("{"))
+            listOf()
+        }
+        val mbrs = parseSeq(null, "}", this::parseMbr);
+        return StructCmpt(type, extds, mbrs)
     }
 
     fun parseMbr(): Mbr {
