@@ -239,19 +239,25 @@ class ParserTest {
     private fun testMatchStmt() = listOf(
         Arguments.of("Conditional", "match () {expr1: stmt1; expr2: stmt2; expr3: stmt3;}",
             MatchStmt(null, listOf(), listOf(
-                Pair(listOf(expr(1)), stmt(1)),
-                Pair(listOf(expr(2)), stmt(2)),
-                Pair(listOf(expr(3)), stmt(3))
+                Pair(MatchPattern(listOf(expr(1)), null), stmt(1)),
+                Pair(MatchPattern(listOf(expr(2)), null), stmt(2)),
+                Pair(MatchPattern(listOf(expr(3)), null), stmt(3))
             ))),
         Arguments.of("Structural", "match (expr1, expr2) {expr3, expr4: stmt;}",
             MatchStmt(null, listOf(expr(1), expr(2)), listOf(
-                Pair(listOf(expr(3), expr(4)), stmt())
+                Pair(MatchPattern(listOf(expr(3), expr(4)), null), stmt())
             ))),
         Arguments.of("Declaration", "match (name = expr) {}",
             MatchStmt("name", listOf(expr()), listOf())),
+        Arguments.of("Is", "match (expr) {is Type: stmt;}",
+            MatchStmt(null, listOf(expr()), listOf(Pair(MatchPattern(null, type()), stmt())))),
+        Arguments.of("Underscore", "match (expr) {_: stmt;}",
+            MatchStmt(null, listOf(expr()), listOf(
+                Pair(MatchPattern(listOf(AccessExpr("_", null)), null), stmt())
+            ))),
         Arguments.of("Else", "match (expr) {else: stmt;}",
             MatchStmt(null, listOf(expr()), listOf(
-                Pair(listOf(AccessExpr("else", null)), stmt())
+                Pair(MatchPattern(listOf(AccessExpr("else", null)), null), stmt())
             )))
     )
 

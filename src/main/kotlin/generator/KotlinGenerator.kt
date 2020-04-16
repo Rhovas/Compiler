@@ -222,19 +222,27 @@ class KotlinGenerator(private val writer: PrintWriter) {
             if (c === stmt.cases.first()) {
                 newline(++indent)
             }
-            val exprs = c.first.withIndex()
-                .filter { it.value !is AccessExpr || (it.value as AccessExpr).name !in listOf("else", "_") }
-            if (exprs.isNotEmpty()) {
-                exprs.forEach {
-                    writer.print(stmt.name ?: "_obj${it.index}")
-                    writer.print(" == ")
-                    genExpr(it.value)
-                    if (it !== exprs.last()) {
-                        writer.print(" && ")
-                    }
-                }
+            if (c.first.isType != null) {
+                writer.print(stmt.name ?: "_obj1")
+                writer.print(" is ")
+                genType(c.first.isType!!)
             } else {
-                writer.print("else")
+                val exprs = c.first.exprs!!.withIndex()
+                    .filter { it.value !is AccessExpr || (it.value as AccessExpr).name !in listOf("else", "_") }
+                if (exprs.isNotEmpty()) {
+                    exprs.forEach {
+                        if (stmt.exprs.isNotEmpty()) {
+                            writer.print(stmt.name ?: "_obj${it.index}")
+                            writer.print(" == ")
+                        }
+                        genExpr(it.value)
+                        if (it !== exprs.last()) {
+                            writer.print(" && ")
+                        }
+                    }
+                } else {
+                    writer.print("else")
+                }
             }
             writer.print(" -> ")
             genStmt(c.second)

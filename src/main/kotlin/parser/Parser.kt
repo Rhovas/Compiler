@@ -208,9 +208,16 @@ class Parser(tokens: Sequence<Token>) {
         val exprs = parseSeq(",", ")", this::parseExpr)
         assert(match("{"))
         val cases = parseSeq(null, "}") {
-            Pair(parseSeq(",", ":") {
-                if (match("_")) AccessExpr(this.tokens[0]!!.literal, null) else parseExpr()
-            }, parseStmt())
+            val pattern = if (match("is")) {
+                val type = parseType()
+                assert(match(":"))
+                MatchPattern(null, type)
+            } else {
+                MatchPattern(parseSeq(",", ":") {
+                    if (match("_")) AccessExpr(this.tokens[0]!!.literal, null) else parseExpr()
+                }, null)
+            }
+            Pair(pattern, parseStmt())
         }
         return MatchStmt(name, exprs, cases)
     }
